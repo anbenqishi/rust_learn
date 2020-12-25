@@ -1,1 +1,1 @@
-rust projects for <the rust programming language>.
+rust projects for 《the rust programming language》.
