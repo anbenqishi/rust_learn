@@ -2,7 +2,10 @@ use std::thread;
 
 static NTHREADS: i32 = 5;
 
-// 这是 `main` 线程
+fn remove_whitespace(s: &str) -> String {
+    s.chars().filter(|c| !c.is_whitespace()).collect()
+}
+
 fn main() {
 
     // 这是我们要处理的数据。
@@ -11,16 +14,16 @@ fn main() {
     //
     // 试一试：插入空格，看看输出会怎样变化！
     let data = "86967897737416471853297327050364959
-11861322575564723963297542624962850
+118613225755647239 63297542624962850
 70856234701860851907960690014725639
-38397966707106094172783238747669219
+383979667071 06094172783238747669 219
 52380795257888236525459303330302837
 58495327135744041048897885734297812
 69920216438980873548808413720956532
 16278424637452589860345374828574668";
 
     // 创建一个向量，用于储存将要创建的子线程
-    let mut children: Vec<thread::JoinHandle<u32>> = vec![];
+    let mut children = vec![];
 
     /*************************************************************************
      * "Map" 阶段
@@ -29,31 +32,20 @@ fn main() {
      ************************************************************************/
 
     // 把数据分段，每段将会单独计算
-    // 每段都是完整数据的一个引用（&str）
-    let data_vec: Vec<&str> = data.splitn(NTHREADS as usize, ' ').collect();
-    for chunked_data in data_vec.i {
-        chunked_data.trim_matches(' ');
+    let data_vec: Vec<&str> = data.splitn(NTHREADS as usize, char::is_whitespace).collect();
+    let mut chunk_vec = vec![];
+    for chunked_data in data_vec.iter() {
+        chunk_vec.push(remove_whitespace(chunked_data));
+        println!("chunk is {:?}", chunked_data);
     };
 
-    // 把每个线程产生的中间结果收入一个新的向量中
-    let mut intermediate_sums = vec![];
-
     // 对分段的数据进行迭代。
-    // .enumerate() 会把当前的迭代计数与被迭代的元素以元组 (index, element)
-    // 的形式返回。接着立即使用 “解构赋值” 将该元组解构成两个变量，
-    // `i` 和 `data_segment`。
-    for data_segment in data_vec.iter() {
+    for data_segment in chunk_vec {
         println!("data segment is \"{}\"", data_segment);
         // 用单独的线程处理每一段数据
         //
         // spawn() 返回新线程的句柄（handle），我们必须拥有句柄，
         // 才能获取线程的返回值。
-        //
-        // 'move || -> u32' 语法表示该闭包：
-        // * 没有参数（'||'）
-        // * 会获取所捕获变量的所有权（'move'）
-        // * 返回无符号 32 位整数（'-> u32'）
-        //
         // Rust 可以根据闭包的内容推断出 '-> u32'，所以我们可以不写它。
         //
         // 试一试：删除 'move'，看看会发生什么
@@ -77,13 +69,13 @@ fn main() {
         }));
     }
 
-
     /*************************************************************************
      * "Reduce" 阶段
      *
      * 收集中间结果，得出最终结果
      ************************************************************************/
-
+    // 把每个线程产生的中间结果收入一个新的向量中
+    let mut intermediate_sums = vec![];
     for child in children {
         // 收集每个子线程的返回值
         let intermediate_sum = child.join().unwrap();
